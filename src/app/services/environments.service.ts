@@ -72,7 +72,9 @@ export class EnvironmentsService {
     statusCode: '200',
     headers: [],
     file: null,
-    duplicates: []
+    duplicates: [],
+    alternateRoutes: [],
+    randomizeValues: false
   };
 
   private emptyHeaderSchema: HeaderType = { uuid: '', key: '', value: '' };

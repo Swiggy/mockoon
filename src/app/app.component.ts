@@ -323,7 +323,6 @@ export class AppComponent implements OnInit {
   }
 
   public setCurrentTab(tabName: TabsNameType) {
-    console.log("current route" + JSON.stringify(this.currentRoute.route));
     this.currentTab = tabName;
   }
 

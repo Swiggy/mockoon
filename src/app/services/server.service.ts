@@ -1,24 +1,30 @@
-import { Injectable } from '@angular/core';
-import * as express from 'express';
-import * as fs from 'fs';
-import * as http from 'http';
-import * as proxy from 'http-proxy-middleware';
-import * as https from 'https';
-import * as killable from 'killable';
-import * as path from 'path';
-import { Config } from 'src/app/config';
-import { AnalyticsEvents } from 'src/app/enums/analytics-events.enum';
-import { Errors } from 'src/app/enums/errors.enum';
-import { DummyJSONParser } from 'src/app/libs/dummy-helpers.lib';
-import { AlertService } from 'src/app/services/alert.service';
-import { DataService } from 'src/app/services/data.service';
-import { EnvironmentsService } from 'src/app/services/environments.service';
-import { EventsService } from 'src/app/services/events.service';
-import { pemFiles } from 'src/app/ssl';
-import { EnvironmentType } from 'src/app/types/environment.type';
-import { CORSHeaders, HeaderType, mimeTypesWithTemplating, RouteType } from 'src/app/types/route.type';
-import { EnvironmentLogsType } from 'src/app/types/server.type';
-import { URL } from 'url';
+import { Injectable } from "@angular/core";
+import * as express from "express";
+import * as fs from "fs";
+import * as http from "http";
+import * as proxy from "http-proxy-middleware";
+import * as https from "https";
+import * as killable from "killable";
+import * as path from "path";
+import { Config } from "src/app/config";
+import { AnalyticsEvents } from "src/app/enums/analytics-events.enum";
+import { Errors } from "src/app/enums/errors.enum";
+import { DummyJSONParser } from "src/app/libs/dummy-helpers.lib";
+import { AlertService } from "src/app/services/alert.service";
+import { DataService } from "src/app/services/data.service";
+import { EnvironmentsService } from "src/app/services/environments.service";
+import { EventsService } from "src/app/services/events.service";
+import { pemFiles } from "src/app/ssl";
+import { EnvironmentType } from "src/app/types/environment.type";
+import {
+  CORSHeaders,
+  HeaderType,
+  mimeTypesWithTemplating,
+  RouteType
+} from "src/app/types/route.type";
+import { EnvironmentLogsType } from "src/app/types/server.type";
+import { URL } from "url";
+import { RouteLogger } from "./route.logger";
 
 const httpsConfig = {
   key: pemFiles.key,
@@ -28,6 +34,7 @@ const httpsConfig = {
 @Injectable()
 export class ServerService {
   public environmentsLogs: EnvironmentLogsType = {};
+  public routerLogger = new RouteLogger();
 
   constructor(
     private alertService: AlertService,
@@ -35,15 +42,17 @@ export class ServerService {
     private eventsService: EventsService,
     private environmentService: EnvironmentsService
   ) {
-    this.eventsService.environmentDeleted.subscribe((environment: EnvironmentType) => {
-      // stop if needed before deletion
-      if (environment.running) {
-        this.stop(environment);
-      }
+    this.eventsService.environmentDeleted.subscribe(
+      (environment: EnvironmentType) => {
+        // stop if needed before deletion
+        if (environment.running) {
+          this.stop(environment);
+        }
 
-      // delete the request logs
-      this.deleteEnvironmentLogs(environment.uuid);
-    });
+        // delete the request logs
+        this.deleteEnvironmentLogs(environment.uuid);
+      }
+    );
   }
 
   /**
@@ -80,13 +89,13 @@ export class ServerService {
     this.enableProxy(server, environment);
 
     // handle server errors
-    serverInstance.on('error', (error: any) => {
-      if (error.code === 'EADDRINUSE') {
-        this.alertService.showAlert('error', Errors.PORT_ALREADY_USED);
-      } else if (error.code === 'EACCES') {
-        this.alertService.showAlert('error', Errors.PORT_INVALID);
+    serverInstance.on("error", (error: any) => {
+      if (error.code === "EADDRINUSE") {
+        this.alertService.showAlert("error", Errors.PORT_ALREADY_USED);
+      } else if (error.code === "EACCES") {
+        this.alertService.showAlert("error", Errors.PORT_INVALID);
       } else {
-        this.alertService.showAlert('error', error.message);
+        this.alertService.showAlert("error", error.message);
       }
     });
 
@@ -127,7 +136,9 @@ export class ServerService {
    */
   private analytics(server: any) {
     server.use((req, res, next) => {
-      this.eventsService.analyticsEvents.next(AnalyticsEvents.SERVER_ENTERING_REQUEST);
+      this.eventsService.analyticsEvents.next(
+        AnalyticsEvents.SERVER_ENTERING_REQUEST
+      );
 
       next();
     });
@@ -140,7 +151,7 @@ export class ServerService {
    */
   private rewriteUrl(server: any) {
     server.use((req, res, next) => {
-      req.url = req.url.replace(/\/{2,}/g, '/');
+      req.url = req.url.replace(/\/{2,}/g, "/");
 
       next();
     });
@@ -155,7 +166,7 @@ export class ServerService {
    */
   private setCors(server: any, environment: EnvironmentType) {
     if (environment.cors) {
-      server.options('/*', (req, res) => {
+      server.options("/*", (req, res) => {
         CORSHeaders.forEach(CORSHeader => {
           res.header(CORSHeader.key, CORSHeader.value);
         });
@@ -175,48 +186,50 @@ export class ServerService {
     environment.routes.forEach((route: RouteType) => {
       // only launch non duplicated routes
       // if (!route.duplicates.length) {
-        try {
-          // create route
-          const endpointWithRoute = route.endpoint.split('?')[0]
-          server[route.method]('/' + ((environment.endpointPrefix) ? environment.endpointPrefix + '/' : '') + endpointWithRoute.replace(/ /g, '%20'), (req, res) => {
+      try {
+        // create route
+        const endpointWithRoute = route.endpoint.split("?")[0];
+        server[route.method](
+          "/" +
+            (environment.endpointPrefix
+              ? environment.endpointPrefix + "/"
+              : "") +
+            endpointWithRoute.replace(/ /g, "%20"),
+          (req, res) => {
             // add route latency if any
             setTimeout(() => {
-              const routeContentType = this.environmentService.getRouteContentType(environment, route);
+              const routeContentType = this.environmentService.getRouteContentType(
+                environment,
+                route
+              );
 
               // set http code
               res.status(route.statusCode);
 
               this.setHeaders(environment.headers, req, res);
               this.setHeaders(route.headers, req, res);
-              let duplicateRoutes = this.environmentService.getAllDuplicateRoutes(environment, route)
-              if (duplicateRoutes.length > 0) {
-                const requestUrl = req.originalUrl.toString().startsWith('/') ? req.originalUrl.substr(1) : req.originalUrl
-                let splitValues = requestUrl.split('?')
-                if (splitValues.length > 1) {
-                  splitValues = splitValues[1].split('&').filter(value => {
-                    return !(value.toString().includes('lat') || value.toString().includes('lng'))
-                  })
-                  console.log(splitValues)
-                  for (const r of duplicateRoutes) {
-                    let rParamsValues = r.endpoint.split('?')
-                    if (rParamsValues.length > 1) {
-                      rParamsValues = rParamsValues[1].split('&').filter(value => {
-                        return !(value.includes('lat') || value.includes('lng'))
-                      })
-                      console.log(rParamsValues)
-                    } else {
-                      rParamsValues = []
-                    }
-                    var diff = rParamsValues.filter(function(obj) { 
-                      return splitValues.indexOf(obj) == -1; 
-                    });                  
-                    if (diff.length == 0) {
-                      route = r
-                    }
-                  }
-                } 
-                
-              } 
+
+              /// remove this after testing
+              route.randomizeValues = true;
+
+              let nextRoute: string = undefined
+
+              if (route.randomizeValues && route.alternateRoutes.length > 0) {
+                  let index = this.routerLogger.getIndexFor(req.requestUrl, "kjasbjbjsadbjabsm", route.alternateRoutes.length)
+                  if (index > 0) {
+                    nextRoute = route.alternateRoutes[index - 1].body
+                  } 
+              } else {
+                let tempRoute = this.updateRouteForParams(
+                  req,
+                  res,
+                  route,
+                  environment
+                );
+                if (tempRoute != undefined) {
+                  route = tempRoute;
+                }
+              }
 
               // send the file
               if (route.file) {
@@ -228,39 +241,57 @@ export class ServerService {
 
                   // if no route content type set to the one detected
                   if (!routeContentType) {
-                    res.set('Content-Type', route.file.mimeType);
+                    res.set("Content-Type", route.file.mimeType);
                   }
 
                   let fileContent: Buffer | string = fs.readFileSync(filePath);
 
                   // parse templating for a limited list of mime types
-                  if (mimeTypesWithTemplating.indexOf(route.file.mimeType) > -1) {
-                    fileContent = DummyJSONParser(fileContent.toString('utf-8', 0, fileContent.length), req);
+                  if (
+                    mimeTypesWithTemplating.indexOf(route.file.mimeType) > -1
+                  ) {
+                    fileContent = DummyJSONParser(
+                      fileContent.toString("utf-8", 0, fileContent.length),
+                      req
+                    );
                   }
 
                   if (!route.file.sendAsBody) {
-                    res.set('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+                    res.set(
+                      "Content-Disposition",
+                      `attachment; filename="${path.basename(filePath)}"`
+                    );
                   }
                   res.send(fileContent);
                 } catch (error) {
-                  if (error.code === 'ENOENT') {
-                    this.sendError(res, Errors.FILE_NOT_EXISTS + filePath, false);
-                  } else if (error.message.indexOf('Parse error') > -1) {
+                  if (error.code === "ENOENT") {
+                    this.sendError(
+                      res,
+                      Errors.FILE_NOT_EXISTS + filePath,
+                      false
+                    );
+                  } else if (error.message.indexOf("Parse error") > -1) {
                     this.sendError(res, Errors.TEMPLATE_PARSE, false);
                   }
                   res.end();
                 }
               } else {
                 // detect if content type is json in order to parse
-                if (routeContentType === 'application/json') {
+                if (routeContentType === "application/json") {
                   try {
                     res.json(JSON.parse(DummyJSONParser(route.body, req)));
                   } catch (error) {
                     // if JSON parsing error send plain text error
-                    if (error.message.indexOf('Unexpected token') > -1 || error.message.indexOf('Parse error') > -1) {
+                    if (
+                      error.message.indexOf("Unexpected token") > -1 ||
+                      error.message.indexOf("Parse error") > -1
+                    ) {
                       this.sendError(res, Errors.JSON_PARSE);
-                    } else if (error.message.indexOf('Missing helper') > -1) {
-                      this.sendError(res, Errors.MISSING_HELPER + error.message.split('"')[1]);
+                    } else if (error.message.indexOf("Missing helper") > -1) {
+                      this.sendError(
+                        res,
+                        Errors.MISSING_HELPER + error.message.split('"')[1]
+                      );
                     }
                     res.end();
                   }
@@ -269,7 +300,7 @@ export class ServerService {
                     res.send(DummyJSONParser(route.body, req));
                   } catch (error) {
                     // if invalid Content-Type provided
-                    if (error.message.indexOf('invalid media type') > -1) {
+                    if (error.message.indexOf("invalid media type") > -1) {
                       this.sendError(res, Errors.INVALID_CONTENT_TYPE);
                     }
                     res.end();
@@ -277,19 +308,66 @@ export class ServerService {
                 }
               }
             }, route.latency);
-          }); 
-        } catch (error) {
-          // if invalid regex defined
-          if (error.message.indexOf('Invalid regular expression') > -1) {
-            this.alertService.showAlert('error', Errors.INVALID_ROUTE_REGEX + route.endpoint);
           }
+        );
+      } catch (error) {
+        // if invalid regex defined
+        if (error.message.indexOf("Invalid regular expression") > -1) {
+          this.alertService.showAlert(
+            "error",
+            Errors.INVALID_ROUTE_REGEX + route.endpoint
+          );
         }
+      }
       // }
     });
   }
 
+  private updateRouteForParams(
+    req,
+    res,
+    route: RouteType,
+    environment: EnvironmentType
+  ) {
+    let duplicateRoutes = this.environmentService.getAllDuplicateRoutes(
+      environment,
+      route
+    );
+    if (duplicateRoutes.length > 0) {
+      const requestUrl = req.originalUrl.toString().startsWith("/")
+        ? req.originalUrl.substr(1)
+        : req.originalUrl;
+      let splitValues = requestUrl.split("?");
+      if (splitValues.length > 1) {
+        splitValues = splitValues[1].split("&").filter(value => {
+          return !(
+            value.toString().includes("lat") || value.toString().includes("lng")
+          );
+        });
+        for (const r of duplicateRoutes) {
+          let rParamsValues = r.endpoint.split("?");
+          if (rParamsValues.length > 1) {
+            rParamsValues = rParamsValues[1].split("&").filter(value => {
+              return !(value.includes("lat") || value.includes("lng"));
+            });
+          } else {
+            rParamsValues = [];
+          }
+          let diff = rParamsValues.filter(function(obj) {
+            return splitValues.indexOf(obj) == -1;
+          });
+          if (diff.length == 0) {
+            return r;
+          }
+        }
+      }
+    } else {
+      return undefined;
+    }
+  }
+
   private setHeaders(headers: HeaderType[], req, res) {
-    headers.forEach((header) => {
+    headers.forEach(header => {
       if (header.key && header.value && !this.testHeaderValidity(header.key)) {
         res.set(header.key, DummyJSONParser(header.value, req));
       }
@@ -306,9 +384,9 @@ export class ServerService {
    */
   private sendError(res: any, errorMessage: string, showAlert = true) {
     if (showAlert) {
-      this.alertService.showAlert('error', errorMessage);
+      this.alertService.showAlert("error", errorMessage);
     }
-    res.set('Content-Type', 'text/plain');
+    res.set("Content-Type", "text/plain");
     res.send(errorMessage);
   }
 
@@ -321,25 +399,32 @@ export class ServerService {
    */
   private enableProxy(server: any, environment: EnvironmentType) {
     // Add catch all proxy if enabled
-    if (environment.proxyMode && environment.proxyHost && this.isValidURL(environment.proxyHost)) {
+    if (
+      environment.proxyMode &&
+      environment.proxyHost &&
+      this.isValidURL(environment.proxyHost)
+    ) {
       // res-stream the body (intercepted by body parser method) and mark as proxied
       const processRequest = (proxyReq, req, res, options) => {
         req.proxied = true;
 
         if (req.body) {
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(req.body));
+          proxyReq.setHeader("Content-Length", Buffer.byteLength(req.body));
           // stream the content
           proxyReq.write(req.body);
         }
       };
 
-      server.use('*', proxy({
-        target: environment.proxyHost,
-        secure: false,
-        changeOrigin: true,
-        ssl: Object.assign({}, httpsConfig, { agent: false }),
-        onProxyReq: processRequest
-      }));
+      server.use(
+        "*",
+        proxy({
+          target: environment.proxyHost,
+          secure: false,
+          changeOrigin: true,
+          ssl: Object.assign({}, httpsConfig, { agent: false }),
+          onProxyReq: processRequest
+        })
+      );
     }
   }
 
@@ -351,20 +436,18 @@ export class ServerService {
   private parseBody(server: any) {
     try {
       server.use((req, res, next) => {
-        req.setEncoding('utf8');
-        req.body = '';
+        req.setEncoding("utf8");
+        req.body = "";
 
-        req.on('data', (chunk) => {
+        req.on("data", chunk => {
           req.body += chunk;
         });
 
-        req.on('end', () => {
+        req.on("end", () => {
           next();
         });
       });
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   /**

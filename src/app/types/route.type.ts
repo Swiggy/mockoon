@@ -310,12 +310,20 @@ export type RouteType = {
     mimeType: string;
     sendAsBody?: boolean;
   };
-
   /**
    * Store duplicates routes indexes, use .length to assess if there is any duplicate
    */
   duplicates: number[];
+  /**
+   * Store alternative responses
+   */
+  alternateRoutes: RouteType[];
+  randomizeValues: boolean;
 };
+
+export class RouteCounter {
+  lastIndexServed: number;
+}
 
 export type HeaderType = { uuid: '', key: string, value: string };
 
