@@ -174,10 +174,11 @@ export class ServerService {
   private setRoutes(server: any, environment: EnvironmentType) {
     environment.routes.forEach((route: RouteType) => {
       // only launch non duplicated routes
-      if (!route.duplicates.length) {
+      // if (!route.duplicates.length) {
         try {
           // create route
-          server[route.method]('/' + ((environment.endpointPrefix) ? environment.endpointPrefix + '/' : '') + route.endpoint.replace(/ /g, '%20'), (req, res) => {
+          const endpointWithRoute = route.endpoint.split('?')[0]
+          server[route.method]('/' + ((environment.endpointPrefix) ? environment.endpointPrefix + '/' : '') + endpointWithRoute.replace(/ /g, '%20'), (req, res) => {
             // add route latency if any
             setTimeout(() => {
               const routeContentType = this.environmentService.getRouteContentType(environment, route);
@@ -187,6 +188,35 @@ export class ServerService {
 
               this.setHeaders(environment.headers, req, res);
               this.setHeaders(route.headers, req, res);
+              let duplicateRoutes = this.environmentService.getAllDuplicateRoutes(environment, route)
+              if (duplicateRoutes.length > 0) {
+                const requestUrl = req.originalUrl.toString().startsWith('/') ? req.originalUrl.substr(1) : req.originalUrl
+                let splitValues = requestUrl.split('?')
+                if (splitValues.length > 1) {
+                  splitValues = splitValues[1].split('&').filter(value => {
+                    return !(value.toString().includes('lat') || value.toString().includes('lng'))
+                  })
+                  console.log(splitValues)
+                  for (const r of duplicateRoutes) {
+                    let rParamsValues = r.endpoint.split('?')
+                    if (rParamsValues.length > 1) {
+                      rParamsValues = rParamsValues[1].split('&').filter(value => {
+                        return !(value.includes('lat') || value.includes('lng'))
+                      })
+                      console.log(rParamsValues)
+                    } else {
+                      rParamsValues = []
+                    }
+                    var diff = rParamsValues.filter(function(obj) { 
+                      return splitValues.indexOf(obj) == -1; 
+                    });                  
+                    if (diff.length == 0) {
+                      route = r
+                    }
+                  }
+                } 
+                
+              } 
 
               // send the file
               if (route.file) {
@@ -247,14 +277,14 @@ export class ServerService {
                 }
               }
             }, route.latency);
-          });
+          }); 
         } catch (error) {
           // if invalid regex defined
           if (error.message.indexOf('Invalid regular expression') > -1) {
             this.alertService.showAlert('error', Errors.INVALID_ROUTE_REGEX + route.endpoint);
           }
         }
-      }
+      // }
     });
   }
 

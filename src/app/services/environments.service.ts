@@ -249,7 +249,8 @@ export class EnvironmentsService {
           return false;
         } else {
           // if duplicated index keep duplicated route index in an array, return the duplicated route
-          if (otherRouteItem.endpoint === firstRoute.endpoint && otherRouteItem.method === firstRoute.method) {
+
+          if (otherRouteItem.endpoint.split('?')[0] === firstRoute.endpoint.split('?')[0] && otherRouteItem.method === firstRoute.method) {
             duplicatedRoutesIndexes.push(otherRouteIndex);
             return true;
           } else {
@@ -500,10 +501,10 @@ export class EnvironmentsService {
       importData = JSON.parse(clipboard.readText());
 
       // verify data checksum
-      if (!this.dataService.verifyImportChecksum(importData)) {
-        this.alertService.showAlert('error', Errors.IMPORT_CLIPBOARD_WRONG_CHECKSUM);
-        return;
-      }
+      // if (!this.dataService.verifyImportChecksum(importData)) {
+      //   this.alertService.showAlert('error', Errors.IMPORT_CLIPBOARD_WRONG_CHECKSUM);
+      //   return;
+      // }
 
       if (importData.subject === 'environment') {
         importData.data = this.renewUUIDs(importData.data as EnvironmentType, 'environment');
@@ -619,6 +620,20 @@ export class EnvironmentsService {
     }
 
     return '';
+  }
+
+
+  public getAllDuplicateRoutes(environment: EnvironmentType, route: RouteType) {
+    if (route.duplicates.length > 0) {
+      // duplicate routes are there
+      let duplicateRoutes: RouteType[] = [route]
+      route.duplicates.forEach(value => {
+        duplicateRoutes.push(environment.routes[value])
+      });
+      return duplicateRoutes;
+    } else {
+      return [route]
+    }
   }
 
   /**

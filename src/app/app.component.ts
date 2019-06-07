@@ -323,6 +323,7 @@ export class AppComponent implements OnInit {
   }
 
   public setCurrentTab(tabName: TabsNameType) {
+    console.log("current route" + JSON.stringify(this.currentRoute.route));
     this.currentTab = tabName;
   }
 
@@ -375,6 +376,10 @@ export class AppComponent implements OnInit {
     }
   }
 
+  // public randomRoutesUpdated(body: string = '', index: number) {
+  //   this.currentRoute.route.randomBodies[index] = body
+  // }
+
 
   /**
    * Function getting called each time a field is updated
@@ -382,7 +387,7 @@ export class AppComponent implements OnInit {
    * @param fieldUpdated - name of the update field
    * @param propagate - should propagate event to env service
    */
-  public environmentUpdated(fieldUpdated: string = '', propagate = true) {
+  public environmentUpdated(fieldUpdated: string = '', propagate = true) {    
     const restartNotNeeded = ['name', 'envLatency', 'routeLatency', 'statusCode', 'file', 'routeHeaders', 'environmentHeaders', 'body', 'envReorder', 'fileSendAsBody', 'documentation'];
     this.currentEnvironment.environment.modifiedAt = new Date();
 
@@ -402,6 +407,7 @@ export class AppComponent implements OnInit {
         environment: this.currentEnvironment.environment
       });
     }
+    // console.log("environment " + JSON.stringify(this.currentEnvironment.environment));
   }
 
   /**

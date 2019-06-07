@@ -4,6 +4,7 @@ export enum Errors {
   TEMPLATE_PARSE = 'Error while parsing template',
   INVALID_CONTENT_TYPE = 'Invalid Content-Type provided',
   INVALID_ROUTE_REGEX = 'This route regex path is invalid ',
+  INVALID_ROUTE_NBGH = 'AKJSDBJASBJNAS DJNB ASMNB JNASDBDA ',
   FILE_NOT_EXISTS = 'Error, this file does not exists: ',
   FILE_TYPE_NOT_SUPPORTED = 'This type of file is not supported',
   PORT_INVALID = 'This port is invalid',
