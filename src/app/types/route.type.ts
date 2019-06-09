@@ -317,7 +317,7 @@ export type RouteType = {
   /**
    * Store alternative responses
    */
-  alternateRoutes: RouteType[];
+  alternateRoutes: string[];
   randomizeValues: boolean;
 };
 

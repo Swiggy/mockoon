@@ -196,6 +196,7 @@ export class ServerService {
               : "") +
             endpointWithRoute.replace(/ /g, "%20"),
           (req, res) => {
+            let nextRouteBody: string = undefined;
             // add route latency if any
             setTimeout(() => {
               const routeContentType = this.environmentService.getRouteContentType(
@@ -209,17 +210,17 @@ export class ServerService {
               this.setHeaders(environment.headers, req, res);
               this.setHeaders(route.headers, req, res);
 
-              /// remove this after testing
-              route.randomizeValues = true;
-
-              let nextRoute: string = undefined
-
-              if (route.randomizeValues && route.alternateRoutes.length > 0) {
-                  let index = this.routerLogger.getIndexFor(req.requestUrl, "kjasbjbjsadbjabsm", route.alternateRoutes.length)
-                  if (index > 0) {
-                    nextRoute = route.alternateRoutes[index - 1].body
-                  } 
+              if (route.randomizeValues && route.alternateRoutes != undefined && route.alternateRoutes.length > 0) {
+                let index = this.routerLogger.getIndexFor(
+                  req.requestUrl,
+                  "kjasbjbjsadbjabsm",
+                  route.alternateRoutes.length
+                );
+                if (index > 0) {
+                  nextRouteBody = route.alternateRoutes[index - 1];
+                }
               } else {
+                console.log("came here2");
                 let tempRoute = this.updateRouteForParams(
                   req,
                   res,
@@ -279,7 +280,11 @@ export class ServerService {
                 // detect if content type is json in order to parse
                 if (routeContentType === "application/json") {
                   try {
-                    res.json(JSON.parse(DummyJSONParser(route.body, req)));
+                    if (nextRouteBody != undefined || nextRouteBody != null) {
+                      res.json(JSON.parse(DummyJSONParser(nextRouteBody, req)));
+                    } else {
+                      res.json(JSON.parse(DummyJSONParser(route.body, req)));
+                    }
                   } catch (error) {
                     // if JSON parsing error send plain text error
                     if (
