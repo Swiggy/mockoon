@@ -74,8 +74,7 @@ export class EnvironmentsService {
     file: null,
     duplicates: [],
     alternateRoutes: [],
-    selectedAlternateRoute: 0,
-    randomizeValues: true
+    selectedAlternateRoute: 0
   };
 
   private emptyHeaderSchema: HeaderType = { uuid: '', key: '', value: '' };

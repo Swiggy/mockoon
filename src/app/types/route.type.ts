@@ -319,7 +319,6 @@ export type RouteType = {
    */
   alternateRoutes: string[];
   selectedAlternateRoute: number;
-  randomizeValues: boolean;
 };
 
 export class RouteCounter {

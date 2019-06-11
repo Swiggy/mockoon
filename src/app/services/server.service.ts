@@ -209,13 +209,15 @@ export class ServerService {
 
               this.setHeaders(environment.headers, req, res);
               this.setHeaders(route.headers, req, res);
-
-              /// remove it
-              route.randomizeValues = true 
-              if (route.randomizeValues && route.alternateRoutes != undefined && route.alternateRoutes.length > 0) {
+              
+              if (route.alternateRoutes != undefined && route.alternateRoutes.length > 0) {
+                let token = ""
+                if (req.headers.sid != undefined) {
+                  token = req.headers.sid
+                }
                 let index = this.routerLogger.getIndexFor(
                   req.requestUrl,
-                  "kjasbjbjsadbjabsm",
+                  token,
                   route.alternateRoutes.length
                 );
                 if (index > 0) {
