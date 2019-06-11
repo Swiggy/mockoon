@@ -318,6 +318,7 @@ export type RouteType = {
    * Store alternative responses
    */
   alternateRoutes: string[];
+  selectedAlternateRoute: number;
   randomizeValues: boolean;
 };
 

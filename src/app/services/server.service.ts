@@ -210,6 +210,8 @@ export class ServerService {
               this.setHeaders(environment.headers, req, res);
               this.setHeaders(route.headers, req, res);
 
+              /// remove it
+              route.randomizeValues = true 
               if (route.randomizeValues && route.alternateRoutes != undefined && route.alternateRoutes.length > 0) {
                 let index = this.routerLogger.getIndexFor(
                   req.requestUrl,
@@ -220,7 +222,6 @@ export class ServerService {
                   nextRouteBody = route.alternateRoutes[index - 1];
                 }
               } else {
-                console.log("came here2");
                 let tempRoute = this.updateRouteForParams(
                   req,
                   res,
@@ -248,13 +249,11 @@ export class ServerService {
                   let fileContent: Buffer | string = fs.readFileSync(filePath);
 
                   // parse templating for a limited list of mime types
-                  if (
-                    mimeTypesWithTemplating.indexOf(route.file.mimeType) > -1
-                  ) {
+                  if (mimeTypesWithTemplating.indexOf(route.file.mimeType) > -1) {
                     fileContent = DummyJSONParser(
                       fileContent.toString("utf-8", 0, fileContent.length),
                       req
-                    );
+                    )
                   }
 
                   if (!route.file.sendAsBody) {

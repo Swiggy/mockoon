@@ -1,63 +1,84 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
-import { NgbTooltipConfig } from '@ng-bootstrap/ng-bootstrap';
-import 'brace';
-import 'brace/ext/searchbox';
-import 'brace/index';
-import 'brace/mode/css';
-import 'brace/mode/html.js';
-import 'brace/mode/json.js';
-import 'brace/mode/text.js';
-import 'brace/mode/xml.js';
-import { ipcRenderer, remote, shell } from 'electron';
-import * as mimeTypes from 'mime-types';
-import { DragulaService } from 'ng2-dragula';
-import * as path from 'path';
-import { ContextMenuItemPayload } from 'src/app/components/context-menu.component';
-import { Config } from 'src/app/config';
-import { AnalyticsEvents } from 'src/app/enums/analytics-events.enum';
-import { Alert, AlertService } from 'src/app/services/alert.service';
-import { AnalyticsService } from 'src/app/services/analytics.service';
-import { AuthService } from 'src/app/services/auth.service';
-import { EnvironmentsService } from 'src/app/services/environments.service';
-import { ContextMenuEventType, EventsService } from 'src/app/services/events.service';
-import { ServerService } from 'src/app/services/server.service';
-import { UpdateService } from 'src/app/services/update.service';
-import { DataSubjectType } from 'src/app/types/data.type';
-import { CurrentEnvironmentType, EnvironmentsType, EnvironmentType } from 'src/app/types/environment.type';
-import { headerNames, headerValues, methods, mimeTypesWithTemplating, RouteType, statusCodes, statusCodesExplanation } from 'src/app/types/route.type';
-import '../assets/custom_theme.js';
-const platform = require('os').platform();
-const appVersion = require('../../package.json').version;
-const arrayMove = require('array-move');
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild
+} from "@angular/core";
+import { NgbTooltipConfig } from "@ng-bootstrap/ng-bootstrap";
+import "brace";
+import "brace/ext/searchbox";
+import "brace/index";
+import "brace/mode/css";
+import "brace/mode/html.js";
+import "brace/mode/json.js";
+import "brace/mode/text.js";
+import "brace/mode/xml.js";
+import { ipcRenderer, remote, shell } from "electron";
+import * as mimeTypes from "mime-types";
+import { DragulaService } from "ng2-dragula";
+import * as path from "path";
+import { ContextMenuItemPayload } from "src/app/components/context-menu.component";
+import { Config } from "src/app/config";
+import { AnalyticsEvents } from "src/app/enums/analytics-events.enum";
+import { Alert, AlertService } from "src/app/services/alert.service";
+import { AnalyticsService } from "src/app/services/analytics.service";
+import { AuthService } from "src/app/services/auth.service";
+import { EnvironmentsService } from "src/app/services/environments.service";
+import {
+  ContextMenuEventType,
+  EventsService
+} from "src/app/services/events.service";
+import { ServerService } from "src/app/services/server.service";
+import { UpdateService } from "src/app/services/update.service";
+import { DataSubjectType } from "src/app/types/data.type";
+import {
+  CurrentEnvironmentType,
+  EnvironmentsType,
+  EnvironmentType
+} from "src/app/types/environment.type";
+import {
+  headerNames,
+  headerValues,
+  methods,
+  mimeTypesWithTemplating,
+  RouteType,
+  statusCodes,
+  statusCodesExplanation
+} from "src/app/types/route.type";
+import "../assets/custom_theme.js";
+const platform = require("os").platform();
+const appVersion = require("../../package.json").version;
+const arrayMove = require("array-move");
 
-type TabsNameType = 'RESPONSE' | 'HEADERS' | 'ENV_SETTINGS' | 'ENV_LOGS';
+type TabsNameType = "RESPONSE" | "HEADERS" | "ENV_SETTINGS" | "ENV_LOGS";
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html'
+  selector: "app-root",
+  templateUrl: "./app.component.html"
 })
 export class AppComponent implements OnInit {
-  @ViewChild('routesMenu') private routesMenu: ElementRef;
-  @ViewChild('environmentsMenu') private environmentsMenu: ElementRef;
+  @ViewChild("routesMenu") private routesMenu: ElementRef;
+  @ViewChild("environmentsMenu") private environmentsMenu: ElementRef;
   public environments: EnvironmentsType;
   public currentEnvironment: CurrentEnvironmentType = null;
-  public currentRoute: { route: RouteType, index: number } = null;
+  public currentRoute: { route: RouteType; index: number } = null;
   public methods = methods;
   public statusCodes = statusCodes;
   public statusCodesExplanation = statusCodesExplanation;
   public saving = false;
   public editorConfig: any = {
     options: {
-      fontSize: '1rem',
-      wrap: 'free',
+      fontSize: "1rem",
+      wrap: "free",
       showPrintMargin: false,
       tooltipFollowsMouse: false,
       useWorker: false
     },
-    mode: 'json',
-    theme: 'custom_theme'
+    mode: "json",
+    theme: "custom_theme"
   };
-  public currentTab: TabsNameType = 'RESPONSE';
+  public currentTab: TabsNameType = "RESPONSE";
   public alerts: Alert[];
   public updateAvailable = false;
   public platform = platform;
@@ -86,80 +107,80 @@ export class AppComponent implements OnInit {
     private analyticsService: AnalyticsService
   ) {
     // tooltip config
-    this.config.container = 'body';
-    this.config.placement = 'bottom';
+    this.config.container = "body";
+    this.config.placement = "bottom";
 
     // set listeners on main process messages
-    ipcRenderer.on('keydown', (event, data) => {
+    ipcRenderer.on("keydown", (event, data) => {
       switch (data.action) {
-        case 'NEW_ENVIRONMENT':
+        case "NEW_ENVIRONMENT":
           this.addEnvironment();
           break;
-        case 'NEW_ROUTE':
+        case "NEW_ROUTE":
           this.addRoute();
           break;
-        case 'START_ENVIRONMENT':
+        case "START_ENVIRONMENT":
           if (this.currentEnvironment) {
             this.toggleEnvironment(this.currentEnvironment.environment);
           }
           break;
-        case 'DUPLICATE_ENVIRONMENT':
+        case "DUPLICATE_ENVIRONMENT":
           if (this.currentEnvironment) {
             this.duplicateEnvironment(this.currentEnvironment.index);
           }
           break;
-        case 'DUPLICATE_ROUTE':
+        case "DUPLICATE_ROUTE":
           if (this.currentRoute) {
             this.duplicateRoute(this.currentRoute.index);
           }
           break;
-        case 'DELETE_ENVIRONMENT':
+        case "DELETE_ENVIRONMENT":
           if (this.currentEnvironment) {
             this.removeEnvironment(this.currentEnvironment.index);
           }
           break;
-        case 'DELETE_ROUTE':
+        case "DELETE_ROUTE":
           if (this.currentRoute) {
             this.removeRoute(this.currentRoute.index);
           }
           break;
-        case 'PREVIOUS_ENVIRONMENT':
+        case "PREVIOUS_ENVIRONMENT":
           if (this.currentEnvironment) {
             this.selectEnvironment(this.currentEnvironment.index - 1);
           }
           break;
-        case 'NEXT_ENVIRONMENT':
+        case "NEXT_ENVIRONMENT":
           if (this.currentEnvironment) {
             this.selectEnvironment(this.currentEnvironment.index + 1);
           }
           break;
-        case 'PREVIOUS_ROUTE':
+        case "PREVIOUS_ROUTE":
           if (this.currentRoute) {
             this.selectRoute(this.currentRoute.index - 1);
           }
           break;
-        case 'NEXT_ROUTE':
+        case "NEXT_ROUTE":
           if (this.currentRoute) {
             this.selectRoute(this.currentRoute.index + 1);
           }
           break;
-        case 'OPEN_SETTINGS':
+        case "OPEN_SETTINGS":
           if (!this.settingsModalOpened) {
             this.settingsModalOpened = true;
             this.eventsService.settingsModalEvents.emit(true);
           }
           break;
-        case 'IMPORT_FILE':
+        case "IMPORT_FILE":
           this.environmentsService.importEnvironmentsFile(() => {
             if (!this.currentEnvironment) {
               this.selectEnvironment(0);
             }
           });
           break;
-        case 'IMPORT_CLIPBOARD':
+        case "IMPORT_CLIPBOARD":
           this.environmentsService.importFromClipboard(this.currentEnvironment);
           break;
-        case 'EXPORT_FILE':
+        case "EXPORT_FILE":
           this.environmentsService.exportAllEnvironments();
           break;
       }
@@ -177,14 +198,18 @@ export class AppComponent implements OnInit {
 
       // send first GA requests when env are ready
       this.eventsService.analyticsEvents.next(AnalyticsEvents.PAGEVIEW);
-      this.eventsService.analyticsEvents.next(AnalyticsEvents.APPLICATION_START);
+      this.eventsService.analyticsEvents.next(
+        AnalyticsEvents.APPLICATION_START
+      );
 
       this.selectEnvironment(0);
     });
 
-    this.environmentsService.selectEnvironment.subscribe((environmentIndex: number) => {
-      this.selectEnvironment(environmentIndex);
-    });
+    this.environmentsService.selectEnvironment.subscribe(
+      (environmentIndex: number) => {
+        this.selectEnvironment(environmentIndex);
+      }
+    );
 
     this.alerts = this.alertService.alerts;
 
@@ -201,15 +226,15 @@ export class AppComponent implements OnInit {
    *
    * @param event
    */
-  @HostListener('mousedown', ['$event']) onMouseDown(event: MouseEvent) {
+  @HostListener("mousedown", ["$event"]) onMouseDown(event: MouseEvent) {
     this.lastMouseDownPosition = { x: event.clientX, y: event.clientY };
   }
-  @HostListener('mousemove', ['$event']) onMouseMove(event: MouseEvent) {
+  @HostListener("mousemove", ["$event"]) onMouseMove(event: MouseEvent) {
     // if left mouse button pressed
     if (this.lastMouseDownPosition && event.buttons === 1) {
       const delta = Math.sqrt(
         Math.pow(event.clientX - this.lastMouseDownPosition.x, 2) +
-        Math.pow(event.clientY - this.lastMouseDownPosition.y, 2)
+          Math.pow(event.clientY - this.lastMouseDownPosition.y, 2)
       );
 
       if (delta < this.dragDeadzone) {
@@ -221,37 +246,46 @@ export class AppComponent implements OnInit {
   /**
    * Handle mouse wheel events on numbers fields
    */
-  @HostListener('mousewheel', ['$event']) onMouseWheel(event: any) {
+  @HostListener("mousewheel", ["$event"]) onMouseWheel(event: any) {
     // Mouse wheel on environment port
-    if (event.target.name === 'environment.port') {
+    if (event.target.name === "environment.port") {
       event.preventDefault();
 
-      const modifier = 1 * (Math.sign(event.wheelDeltaY));
-      if (modifier > 0 || (modifier < 0 && this.currentEnvironment.environment.port !== 0)) {
+      const modifier = 1 * Math.sign(event.wheelDeltaY);
+      if (
+        modifier > 0 ||
+        (modifier < 0 && this.currentEnvironment.environment.port !== 0)
+      ) {
         this.currentEnvironment.environment.port += modifier;
-        this.environmentUpdated('port');
+        this.environmentUpdated("port");
       }
     }
 
     // Mouse wheel on environment latency
-    if (event.target.name === 'environment.latency') {
+    if (event.target.name === "environment.latency") {
       event.preventDefault();
 
-      const modifier = 1 * (Math.sign(event.wheelDeltaY));
-      if (modifier > 0 || (modifier < 0 && this.currentEnvironment.environment.latency !== 0)) {
+      const modifier = 1 * Math.sign(event.wheelDeltaY);
+      if (
+        modifier > 0 ||
+        (modifier < 0 && this.currentEnvironment.environment.latency !== 0)
+      ) {
         this.currentEnvironment.environment.latency += modifier;
-        this.environmentUpdated('envLatency');
+        this.environmentUpdated("envLatency");
       }
     }
 
     // Mouse wheel on route latency
-    if (event.target.name === 'route.latency') {
+    if (event.target.name === "route.latency") {
       event.preventDefault();
 
-      const modifier = 1 * (Math.sign(event.wheelDeltaY));
-      if (modifier > 0 || (modifier < 0 && this.currentRoute.route.latency !== 0)) {
+      const modifier = 1 * Math.sign(event.wheelDeltaY);
+      if (
+        modifier > 0 ||
+        (modifier < 0 && this.currentRoute.route.latency !== 0)
+      ) {
         this.currentRoute.route.latency += modifier;
-        this.environmentUpdated('routeLatency');
+        this.environmentUpdated("routeLatency");
       }
     }
   }
@@ -261,21 +295,34 @@ export class AppComponent implements OnInit {
    */
   public initDragMonitoring() {
     // on drop reselect if we moved a selected env/route
-    this.dragulaService.dropModel().subscribe((movedItem) => {
-      if (movedItem.name === 'environmentsContainer') {
-        arrayMove.mut(this.environments, movedItem.sourceIndex, movedItem.targetIndex);
+    this.dragulaService.dropModel().subscribe(movedItem => {
+      if (movedItem.name === "environmentsContainer") {
+        arrayMove.mut(
+          this.environments,
+          movedItem.sourceIndex,
+          movedItem.targetIndex
+        );
 
-        const selectedEnvironmentIndex = this.environmentsService.findEnvironmentIndex(this.currentEnvironment.environment.uuid);
+        const selectedEnvironmentIndex = this.environmentsService.findEnvironmentIndex(
+          this.currentEnvironment.environment.uuid
+        );
         this.selectEnvironment(selectedEnvironmentIndex);
 
-        this.environmentUpdated('envReorder', true);
-      } else if (movedItem.name === 'routesContainer') {
-        arrayMove.mut(this.currentEnvironment.environment.routes, movedItem.sourceIndex, movedItem.targetIndex);
+        this.environmentUpdated("envReorder", true);
+      } else if (movedItem.name === "routesContainer") {
+        arrayMove.mut(
+          this.currentEnvironment.environment.routes,
+          movedItem.sourceIndex,
+          movedItem.targetIndex
+        );
 
-        const selectedRouteIndex = this.environmentsService.findRouteIndex(this.currentEnvironment.environment, this.currentRoute.route.uuid);
+        const selectedRouteIndex = this.environmentsService.findRouteIndex(
+          this.currentEnvironment.environment,
+          this.currentRoute.route.uuid
+        );
         this.selectRoute(selectedRouteIndex);
 
-        this.environmentUpdated('routeReorder', true);
+        this.environmentUpdated("routeReorder", true);
       }
     });
   }
@@ -293,7 +340,9 @@ export class AppComponent implements OnInit {
 
         if (environment.needRestart) {
           this.serverService.start(environment);
-          this.eventsService.analyticsEvents.next(AnalyticsEvents.SERVER_RESTART);
+          this.eventsService.analyticsEvents.next(
+            AnalyticsEvents.SERVER_RESTART
+          );
         }
 
         // if stopping or restarting, restart is not needed
@@ -307,8 +356,14 @@ export class AppComponent implements OnInit {
 
   public selectEnvironment(environmentIndex: number) {
     // check if selection exists
-    if (environmentIndex >= 0 && environmentIndex <= (this.environments.length - 1)) {
-      this.currentEnvironment = { environment: this.environments[environmentIndex], index: environmentIndex };
+    if (
+      environmentIndex >= 0 &&
+      environmentIndex <= this.environments.length - 1
+    ) {
+      this.currentEnvironment = {
+        environment: this.environments[environmentIndex],
+        index: environmentIndex
+      };
 
       // select first route
       this.selectRoute(0);
@@ -318,7 +373,9 @@ export class AppComponent implements OnInit {
         this.routesMenu.nativeElement.scrollTop = 0;
       }
 
-      this.eventsService.analyticsEvents.next(AnalyticsEvents.NAVIGATE_ENVIRONMENT);
+      this.eventsService.analyticsEvents.next(
+        AnalyticsEvents.NAVIGATE_ENVIRONMENT
+      );
     }
   }
 
@@ -328,7 +385,9 @@ export class AppComponent implements OnInit {
 
   public clearEnvironmentLogs(currentEnvironment: CurrentEnvironmentType) {
     if (this.clearEnvironmentLogsTimeout) {
-      this.serverService.clearEnvironmentLogs(currentEnvironment.environment.uuid);
+      this.serverService.clearEnvironmentLogs(
+        currentEnvironment.environment.uuid
+      );
       clearTimeout(this.clearEnvironmentLogsTimeout);
       this.clearEnvironmentLogsTimeout = undefined;
     } else {
@@ -340,17 +399,24 @@ export class AppComponent implements OnInit {
 
   public selectRoute(routeIndex: number) {
     // check if selection exists
-    if (this.currentEnvironment.environment.routes.length > 0 && routeIndex >= 0 && routeIndex <= (this.currentEnvironment.environment.routes.length - 1)) {
+    if (
+      this.currentEnvironment.environment.routes.length > 0 &&
+      routeIndex >= 0 &&
+      routeIndex <= this.currentEnvironment.environment.routes.length - 1
+    ) {
       // go on first tab when switching route
-      this.currentTab = 'RESPONSE';
+      this.currentTab = "RESPONSE";
 
-      this.currentRoute = { route: this.currentEnvironment.environment.routes[routeIndex], index: routeIndex };
+      this.currentRoute = {
+        route: this.currentEnvironment.environment.routes[routeIndex],
+        index: routeIndex
+      };
 
       this.changeEditorSettings();
 
       this.eventsService.analyticsEvents.next(AnalyticsEvents.NAVIGATE_ROUTE);
     } else {
-      this.currentTab = 'ENV_SETTINGS';
+      this.currentTab = "ENV_SETTINGS";
       this.currentRoute = null;
     }
   }
@@ -365,9 +431,11 @@ export class AppComponent implements OnInit {
 
   public addRoute() {
     if (this.currentEnvironment) {
-      this.environmentUpdated('addRoute', false);
+      this.environmentUpdated("addRoute", false);
 
-      const index = this.environmentsService.addRoute(this.currentEnvironment.environment);
+      const index = this.environmentsService.addRoute(
+        this.currentEnvironment.environment
+      );
 
       this.selectRoute(index);
 
@@ -379,25 +447,41 @@ export class AppComponent implements OnInit {
   //   this.currentRoute.route.randomBodies[index] = body
   // }
 
-
   /**
    * Function getting called each time a field is updated
    *
    * @param fieldUpdated - name of the update field
    * @param propagate - should propagate event to env service
    */
-  public environmentUpdated(fieldUpdated: string = '', propagate = true) {    
-    const restartNotNeeded = ['name', 'envLatency', 'routeLatency', 'statusCode', 'file', 'routeHeaders', 'environmentHeaders', 'body', 'envReorder', 'fileSendAsBody', 'documentation'];
+  public environmentUpdated(fieldUpdated: string = "", propagate = true) {
+    const restartNotNeeded = [
+      "name",
+      "envLatency",
+      "routeLatency",
+      "statusCode",
+      "file",
+      "routeHeaders",
+      "environmentHeaders",
+      "body",
+      "envReorder",
+      "fileSendAsBody",
+      "documentation"
+    ];
     this.currentEnvironment.environment.modifiedAt = new Date();
 
     // restart is not needed for some fields
     if (!restartNotNeeded.includes(fieldUpdated)) {
       if (this.currentEnvironment.environment.running) {
-        this.currentEnvironment.environment.needRestart = this.currentEnvironment.environment.modifiedAt > this.currentEnvironment.environment.startedAt;
+        this.currentEnvironment.environment.needRestart =
+          this.currentEnvironment.environment.modifiedAt >
+          this.currentEnvironment.environment.startedAt;
       }
     }
 
-    if (fieldUpdated === 'routeHeaders' || fieldUpdated === 'environmentHeaders') {
+    if (
+      fieldUpdated === "routeHeaders" ||
+      fieldUpdated === "environmentHeaders"
+    ) {
       this.changeEditorSettings();
     }
 
@@ -415,18 +499,21 @@ export class AppComponent implements OnInit {
    * @param routeIndex
    */
   private removeRoute(routeIndex: number) {
-    this.environmentUpdated('removeRoute', false);
+    this.environmentUpdated("removeRoute", false);
 
-    this.environmentsService.removeRoute(this.currentEnvironment.environment, routeIndex);
+    this.environmentsService.removeRoute(
+      this.currentEnvironment.environment,
+      routeIndex
+    );
 
     // if same route than deleted one
     if (routeIndex === this.currentRoute.index) {
       // if there is still something to navigate to, navigate
       if (this.currentEnvironment.environment.routes.length > 0) {
         // select previous route or index 0 if currently on 0
-        this.selectRoute((routeIndex === 0) ? 0 : routeIndex - 1);
+        this.selectRoute(routeIndex === 0 ? 0 : routeIndex - 1);
       } else {
-        this.currentTab = 'ENV_SETTINGS';
+        this.currentTab = "ENV_SETTINGS";
         this.currentRoute = null;
       }
     } else if (routeIndex < this.currentRoute.index) {
@@ -450,7 +537,9 @@ export class AppComponent implements OnInit {
       // if there is still something to navigate to, navigate
       if (this.environments.length > 0) {
         // select previous environment or index 0 if currently on 0
-        this.selectEnvironment((environmentIndex === 0) ? 0 : environmentIndex - 1);
+        this.selectEnvironment(
+          environmentIndex === 0 ? 0 : environmentIndex - 1
+        );
       } else {
         // navigate to nothing
         this.currentEnvironment = null;
@@ -467,26 +556,36 @@ export class AppComponent implements OnInit {
    */
   public openRouteInBrowser() {
     if (this.currentEnvironment.environment.running) {
-      let routeUrl = ((this.currentEnvironment.environment.https) ? 'https://' : 'http://') + 'localhost:' + this.currentEnvironment.environment.port + '/';
+      let routeUrl =
+        (this.currentEnvironment.environment.https ? "https://" : "http://") +
+        "localhost:" +
+        this.currentEnvironment.environment.port +
+        "/";
 
       if (this.currentEnvironment.environment.endpointPrefix) {
-        routeUrl += this.currentEnvironment.environment.endpointPrefix + '/';
+        routeUrl += this.currentEnvironment.environment.endpointPrefix + "/";
       }
 
       routeUrl += this.currentRoute.route.endpoint;
 
       shell.openExternal(routeUrl);
 
-      this.eventsService.analyticsEvents.next(AnalyticsEvents.LINK_ROUTE_IN_BROWSER);
+      this.eventsService.analyticsEvents.next(
+        AnalyticsEvents.LINK_ROUTE_IN_BROWSER
+      );
     }
   }
 
   public browseFiles() {
-    this.dialog.showOpenDialog(this.BrowserWindow.getFocusedWindow(), {}, (file) => {
-      if (file && file[0]) {
-        this.updateRouteFile(file[0]);
+    this.dialog.showOpenDialog(
+      this.BrowserWindow.getFocusedWindow(),
+      {},
+      file => {
+        if (file && file[0]) {
+          this.updateRouteFile(file[0]);
+        }
       }
-    });
+    );
   }
 
   /**
@@ -516,12 +615,12 @@ export class AppComponent implements OnInit {
       mimeType: mimeTypes.lookup(filePath)
     };
 
-    this.environmentUpdated('file');
+    this.environmentUpdated("file");
   }
 
   public deleteFile() {
     this.currentRoute.route.file = null;
-    this.environmentUpdated('file');
+    this.environmentUpdated("file");
   }
 
   /**
@@ -555,6 +654,28 @@ export class AppComponent implements OnInit {
     this.eventsService.analyticsEvents.next(AnalyticsEvents.LINK_WIKI);
   }
 
+  public addAlternateRouteBody() {
+    if (!this.currentRoute.route.alternateRoutes) {
+      this.currentRoute.route.alternateRoutes = [];
+    }
+    this.currentRoute.route.alternateRoutes.push(
+      `{ "index": ${this.currentRoute.route.alternateRoutes.length} }`
+    );
+  }
+
+  public removeAlternateRouteBody(index) {
+    if (index < 0) {
+      return;
+    }
+    if (window.confirm(`Are you sure you want to delete ${index}`)) {
+      this.currentRoute.route.selectedAlternateRoute = index - 1;
+      this.currentRoute.route.alternateRoutes = this.currentRoute.route.alternateRoutes.filter(
+        (_, i) => i !== index
+      );
+      console.log("current route data" + JSON.stringify(this.currentRoute.route))
+    }
+  }
+
   public applyUpdate() {
     this.updateService.applyUpdate();
 
@@ -565,18 +686,24 @@ export class AppComponent implements OnInit {
    * Set editor mode depending on content type
    */
   private changeEditorSettings() {
-    const contentType = this.environmentsService.getRouteContentType(this.currentEnvironment.environment, this.currentRoute.route);
+    const contentType = this.environmentsService.getRouteContentType(
+      this.currentEnvironment.environment,
+      this.currentRoute.route
+    );
 
-    if (contentType === 'application/json') {
-      this.editorConfig.mode = 'json';
-    } else if (contentType === 'text/html' || contentType === 'application/xhtml+xml') {
-      this.editorConfig.mode = 'html';
-    } else if (contentType === 'application/xml') {
-      this.editorConfig.mode = 'xml';
-    } else if (contentType === 'text/css') {
-      this.editorConfig.mode = 'css';
+    if (contentType === "application/json") {
+      this.editorConfig.mode = "json";
+    } else if (
+      contentType === "text/html" ||
+      contentType === "application/xhtml+xml"
+    ) {
+      this.editorConfig.mode = "html";
+    } else if (contentType === "application/xml") {
+      this.editorConfig.mode = "xml";
+    } else if (contentType === "text/css") {
+      this.editorConfig.mode = "css";
     } else {
-      this.editorConfig.mode = 'text';
+      this.editorConfig.mode = "text";
     }
   }
 
@@ -585,7 +712,11 @@ export class AppComponent implements OnInit {
    *
    * @param event - click event
    */
-  public navigationContextMenu(subject: DataSubjectType, subjectId: number, event: any) {
+  public navigationContextMenu(
+    subject: DataSubjectType,
+    subjectId: number,
+    event: any
+  ) {
     // if right click display context menu
     if (event && event.which === 3) {
       const menu: ContextMenuEventType = {
@@ -594,59 +725,60 @@ export class AppComponent implements OnInit {
           {
             payload: {
               subject,
-              action: 'duplicate',
+              action: "duplicate",
               subjectId
             },
-            label: 'Duplicate ' + subject,
-            icon: 'content_copy'
+            label: "Duplicate " + subject,
+            icon: "content_copy"
           },
           {
             payload: {
               subject,
-              action: 'export',
+              action: "export",
               subjectId
             },
-            label: 'Copy to clipboard (JSON)',
-            icon: 'assignment'
+            label: "Copy to clipboard (JSON)",
+            icon: "assignment"
           },
           {
             payload: {
               subject,
-              action: 'delete',
+              action: "delete",
               subjectId
             },
-            label: 'Delete ' + subject,
-            icon: 'delete',
+            label: "Delete " + subject,
+            icon: "delete",
             confirm: {
-              icon: 'error',
-              label: 'Confirm deletion'
+              icon: "error",
+              label: "Confirm deletion"
             },
-            confirmColor: 'text-danger'
+            confirmColor: "text-danger"
           }
         ]
       };
 
-      if (subject === 'environment') {
+      if (subject === "environment") {
         menu.items.unshift(
           {
             payload: {
               subject,
-              action: 'env_logs',
+              action: "env_logs",
               subjectId
             },
-            label: 'Environment logs',
-            icon: 'history'
+            label: "Environment logs",
+            icon: "history"
           },
           {
             payload: {
               subject,
-              action: 'env_settings',
+              action: "env_settings",
               subjectId
             },
-            label: 'Environment settings',
-            icon: 'settings',
+            label: "Environment settings",
+            icon: "settings",
             separator: true
-          });
+          }
+        );
       }
       this.eventsService.contextMenuEvents.emit(menu);
     }
@@ -659,32 +791,32 @@ export class AppComponent implements OnInit {
    */
   public navigationContextMenuItemClicked(payload: ContextMenuItemPayload) {
     switch (payload.action) {
-      case 'env_logs':
+      case "env_logs":
         if (payload.subjectId !== this.currentEnvironment.index) {
           this.selectEnvironment(payload.subjectId);
         }
-        this.setCurrentTab('ENV_LOGS');
+        this.setCurrentTab("ENV_LOGS");
         break;
-      case 'env_settings':
+      case "env_settings":
         if (payload.subjectId !== this.currentEnvironment.index) {
           this.selectEnvironment(payload.subjectId);
         }
-        this.setCurrentTab('ENV_SETTINGS');
+        this.setCurrentTab("ENV_SETTINGS");
         break;
-      case 'duplicate':
-        if (payload.subject === 'route') {
+      case "duplicate":
+        if (payload.subject === "route") {
           this.duplicateRoute(payload.subjectId);
-        } else if (payload.subject === 'environment') {
+        } else if (payload.subject === "environment") {
           this.duplicateEnvironment(payload.subjectId);
         }
         break;
-      case 'export':
+      case "export":
         this.exportToClipboard(payload.subject, payload.subjectId);
         break;
-      case 'delete':
-        if (payload.subject === 'route') {
+      case "delete":
+        if (payload.subject === "route") {
           this.removeRoute(payload.subjectId);
-        } else if (payload.subject === 'environment') {
+        } else if (payload.subject === "environment") {
           this.removeEnvironment(payload.subjectId);
         }
         break;
@@ -695,7 +827,9 @@ export class AppComponent implements OnInit {
    * Duplicate an environment
    */
   public duplicateEnvironment(environmentIndex: number) {
-    const index = this.environmentsService.duplicateEnvironment(environmentIndex);
+    const index = this.environmentsService.duplicateEnvironment(
+      environmentIndex
+    );
     this.selectEnvironment(index);
 
     // auto scroll environments to bottom when adding
@@ -706,7 +840,10 @@ export class AppComponent implements OnInit {
    * Duplicate a route
    */
   public duplicateRoute(routeIndex: number) {
-    const index = this.environmentsService.duplicateRoute(this.currentEnvironment.environment, routeIndex);
+    const index = this.environmentsService.duplicateRoute(
+      this.currentEnvironment.environment,
+      routeIndex
+    );
     this.selectRoute(index);
 
     // auto scroll routes to bottom when adding
@@ -724,10 +861,13 @@ export class AppComponent implements OnInit {
    * @param subjectIndex
    */
   public exportToClipboard(subject: DataSubjectType, subjectIndex: number) {
-    if (subject === 'environment') {
+    if (subject === "environment") {
       this.environmentsService.exportEnvironmentToClipboard(subjectIndex);
-    } else if (subject === 'route') {
-      this.environmentsService.exportRouteToClipboard(this.currentEnvironment.index, subjectIndex);
+    } else if (subject === "route") {
+      this.environmentsService.exportRouteToClipboard(
+        this.currentEnvironment.index,
+        subjectIndex
+      );
     }
   }
 
@@ -735,7 +875,10 @@ export class AppComponent implements OnInit {
    * Check if selected file's mime type supports templating
    */
   public fileSupportsTemplating(): boolean {
-    return mimeTypesWithTemplating.indexOf(this.currentRoute.route.file.mimeType) > -1;
+    return (
+      mimeTypesWithTemplating.indexOf(this.currentRoute.route.file.mimeType) >
+      -1
+    );
   }
 
   /**
@@ -750,6 +893,8 @@ export class AppComponent implements OnInit {
   }
 
   public addCORSHeadersToEnvironment() {
-    this.environmentsService.setEnvironmentCORSHeaders(this.currentEnvironment.environment);
+    this.environmentsService.setEnvironmentCORSHeaders(
+      this.currentEnvironment.environment
+    );
   }
 }
