@@ -229,8 +229,9 @@
                 <div class="row" *ngIf="currentRoute">
                   <div class="col">
                     <div class="title-separator has-icon">
-                      <div class="title-separator-icon text-secondary"><i
-                          class="material-icons">settings_input_component</i></div>
+                      <div class="title-separator-icon text-secondary">
+                        <span (click)="formatBody()"><i class="material-icons">subject</i></span>
+                      </div>
                       <div class="title-separator-text">
                         <div>Route settings</div>
                       </div>

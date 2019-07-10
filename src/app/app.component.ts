@@ -897,4 +897,18 @@ export class AppComponent implements OnInit {
       this.currentEnvironment.environment
     );
   }
+
+  public formatBody() {
+    if (! this.currentRoute.route.body) {
+      return;
+    }
+    const contentType = this.getRouteContentType(this.currentEnvironment.environment, this.currentRoute.route);
+    if (contentType === 'application/json') {
+      try {
+        this.currentRoute.route.body = JSON.stringify(JSON.parse(this.currentRoute.route.body), undefined, 2);
+      } catch (e) {
+        // ignore any errors with parsing / stringifying the JSON
+      }
+    }
+  }
 }
