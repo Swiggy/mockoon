@@ -11,12 +11,11 @@ export class RouteLogger {
   >();
 
   public getIndexFor(apiEndpoint: string, token: string, maximumValue: number) {
-      console.log("apiEndpoint " + apiEndpoint + " tokemn " + token + " maxValues " + maximumValue)
       let tokenLogger = this.logger.get(token)
       if (tokenLogger != undefined && tokenLogger.get(apiEndpoint) != undefined) {
           let routeCounterData = tokenLogger.get(apiEndpoint)
           if (routeCounterData.lastIndexServed + 1 > maximumValue) {
-              return routeCounterData.lastIndexServed
+              return 0
           }
           routeCounterData.lastIndexServed += 1 
           let newCounterValue = new Map<string, RouteCounter>()
