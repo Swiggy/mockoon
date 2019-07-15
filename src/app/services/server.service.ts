@@ -215,12 +215,6 @@ export class ServerService {
                 if (req.headers.sid != undefined) {
                   token = req.headers.sid
                 }
-                if (req.headers.tid != undefined) {
-                  token = req.headers.tid
-                }
-                if (req.headers.token != undefined) {
-                  token = req.headers.token
-                }
                 let index = this.routerLogger.getIndexFor(
                   req.requestUrl,
                   token,

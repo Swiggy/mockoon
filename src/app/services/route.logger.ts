@@ -14,13 +14,13 @@ export class RouteLogger {
       let tokenLogger = this.logger.get(token)
       if (tokenLogger != undefined && tokenLogger.get(apiEndpoint) != undefined) {
           let routeCounterData = tokenLogger.get(apiEndpoint)
-          if (routeCounterData.lastIndexServed + 1 > maximumValue) {
-              return 0
-          }
           routeCounterData.lastIndexServed += 1 
           let newCounterValue = new Map<string, RouteCounter>()
           newCounterValue.set(apiEndpoint, routeCounterData)
           this.logger.set(token, newCounterValue)
+          if (routeCounterData.lastIndexServed + 1 > maximumValue) {
+            this.logger.delete(token)
+          }
           return routeCounterData.lastIndexServed
       } else {
           let routeCounterData = new RouteCounter()
