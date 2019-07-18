@@ -32,6 +32,7 @@ import { ServerService } from 'src/app/services/server.service';
 import { SettingsService } from 'src/app/services/settings.service';
 import { UpdateService } from 'src/app/services/update.service';
 import { AppComponent } from './app.component';
+import { MainPipeModule } from 'src/main-pipe/main-pipe.module';
 
 @NgModule({
   declarations: [
@@ -58,7 +59,8 @@ import { AppComponent } from './app.component';
     MarkdownModule.forRoot({ markedOptions: { provide: MarkedOptions, useFactory: MarkedOptionsFactory } }),
     AngularFireModule.initializeApp(Config.firebaseConfig),
     AngularFireAuthModule,
-    AngularFirestoreModule
+    AngularFirestoreModule,
+    MainPipeModule
   ],
   providers: [
     AlertService,

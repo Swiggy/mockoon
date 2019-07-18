@@ -22,7 +22,7 @@
             </span>
             <input type="text" class="form-control" placeholder="No environment" disabled>
           </div>
-          <div *ngIf="currentEnvironment">
+          <div *ngIf="currentEnvironment"> 
             <div class="input-group">
               <span class="input-group-prepend">
                 <button class="btn btn-link" type="button"
@@ -137,7 +137,7 @@
           </ul>
         </div>
 
-        <!-- Routes menu -->
+        <!-- Routes menu --> 
         <div class="col-2   menu-columns--width d-flex flex-column">
           <div>
             <!-- container needed for flexboxes -->
@@ -149,9 +149,10 @@
               </li>
             </ul>
           </div>
+          <input [(ngModel)]="searchText" placeholder="search text goes here">
           <ul class="nav flex-column menu-list" #routesMenu *ngIf="currentEnvironment" dragula="routesContainer"
             [dragulaModel]='currentEnvironment.environment.routes'>
-            <li class="nav-item" *ngFor="let route of currentEnvironment.environment.routes; let routeIndex = index">
+            <li class="nav-item" *ngFor="let route of currentEnvironment.environment.routes | myFilter:searchText; index as routeIndex">
               <a class="nav-link" [ngClass]="{'active': currentRoute && currentRoute.index === routeIndex}"
                 (click)="selectRoute(routeIndex)" (contextmenu)="navigationContextMenu('route', routeIndex, $event)">
                 <div class="ellipsis">

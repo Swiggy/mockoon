@@ -332,3 +332,33 @@ export const CORSHeaders = [
   { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS' },
   { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With' }
 ];
+
+// import {Pipe, PipeTransform} from '@angular/core';
+
+// @Pipe({
+//   name: 'search'
+// })
+// export class SearchPipe implements PipeTransform {
+//   public transform(value, keys: string, term: string) {
+
+//     if (!term) return value;
+//     return (value || []).filter(item => keys.split(',').some(key => item.hasOwnProperty(key) && new RegExp(term, 'gi').test(item[key])));
+
+//   }
+// }
+
+
+import {Pipe, PipeTransform} from '@angular/core';
+@Pipe({
+  name: 'myFilter',
+  pure: false
+})
+export class MyFilterPipe implements PipeTransform {
+    transform(items: RouteType[], str : string): any {
+        if( str == undefined || str.length<2)
+            return items;
+        return items.filter(element => {
+          return element.endpoint.includes(str);
+        });
+    }
+}
