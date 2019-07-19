@@ -44,7 +44,8 @@ import {
   mimeTypesWithTemplating,
   RouteType,
   statusCodes,
-  statusCodesExplanation
+  statusCodesExplanation,
+  MyFilterPipe
 } from "src/app/types/route.type";
 import "../assets/custom_theme.js";
 const platform = require("os").platform();
@@ -311,7 +312,7 @@ export class AppComponent implements OnInit {
         this.environmentUpdated("envReorder", true);
       } else if (movedItem.name === "routesContainer") {
         arrayMove.mut(
-          this.currentEnvironment.environment.routes,
+          this.filteredRoutes(this.currentEnvironment.environment.routes),
           movedItem.sourceIndex,
           movedItem.targetIndex
         );
@@ -397,18 +398,41 @@ export class AppComponent implements OnInit {
     }
   }
 
+  public filteredRoutes(routes: RouteType[]) {
+    // console.log("filter function all routes\n", routes);
+    const searchText = document.getElementById("mySearchText");
+    var searchString = "";
+    if(searchText != undefined && searchText.getAttribute("ng-reflect-model") != null) {
+      searchString = searchText.getAttribute("ng-reflect-model");
+      if (searchString.length < 2) {
+        return routes
+      }
+      // console.log("SEARCH DATA", searchString);
+      const allRoutes = this.currentEnvironment.environment.routes;
+      const filteredRoutes = allRoutes.filter(element => {
+      return element.endpoint.includes(searchString);
+      });
+      // console.log("routes", filteredRoutes[0]);
+      return filteredRoutes;
+    }
+    return routes;
+  }
+
   public selectRoute(routeIndex: number) {
     // check if selection exists
+    // console.log("SELECT ROUTE ", routeIndex);
+    const myRoutes = this.filteredRoutes(this.currentEnvironment.environment.routes);
+    // console.log("ALL ROUTES\n", myRoutes);
     if (
-      this.currentEnvironment.environment.routes.length > 0 &&
+      myRoutes.length > 0 &&
       routeIndex >= 0 &&
-      routeIndex <= this.currentEnvironment.environment.routes.length - 1
+      routeIndex <= myRoutes.length - 1
     ) {
       // go on first tab when switching route
       this.currentTab = "RESPONSE";
 
       this.currentRoute = {
-        route: this.currentEnvironment.environment.routes[routeIndex],
+        route: myRoutes[routeIndex],
         index: routeIndex
       };
 
@@ -419,8 +443,8 @@ export class AppComponent implements OnInit {
       this.currentTab = "ENV_SETTINGS";
       this.currentRoute = null;
     }
+    // }
   }
-
   public addEnvironment() {
     const index = this.environmentsService.addEnvironment();
 
@@ -490,7 +514,7 @@ export class AppComponent implements OnInit {
         environment: this.currentEnvironment.environment
       });
     }
-    // console.log("environment " + JSON.stringify(this.currentEnvironment.environment));
+    console.log("environment " + JSON.stringify(this.currentEnvironment.environment));
   }
 
   /**

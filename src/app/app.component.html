@@ -149,7 +149,7 @@
               </li>
             </ul>
           </div>
-          <input [(ngModel)]="searchText" placeholder="search text goes here">
+          <input [(ngModel)]="searchText" placeholder="api search text goes here" id="mySearchText">
           <ul class="nav flex-column menu-list" #routesMenu *ngIf="currentEnvironment" dragula="routesContainer"
             [dragulaModel]='currentEnvironment.environment.routes'>
             <li class="nav-item" *ngFor="let route of currentEnvironment.environment.routes | myFilter:searchText; index as routeIndex">
