@@ -698,9 +698,19 @@ export class AppComponent implements OnInit {
       return;
     }
     if (window.confirm(`Are you sure you want to delete ${index}`)) {
-      this.currentRoute.route.selectedAlternateRoute = index - 1;
+      if(index == 0) {
+        if(this.currentRoute.route.alternateRoutes.length > 1) {
+          this.currentRoute.route.selectedAlternateRoute = index + 1;
+        } else {
+          this.currentRoute.route.selectedAlternateRoute = -1;
+        }
+      } else {
+        this.currentRoute.route.selectedAlternateRoute = index - 1;
+      }
       this.currentRoute.route.alternateRoutes = this.currentRoute.route.alternateRoutes.filter(
-        (_, i) => i !== index
+        function(_, i, arr) {
+          return i != index;
+        }
       );
       console.log("current route data" + JSON.stringify(this.currentRoute.route))
     }
