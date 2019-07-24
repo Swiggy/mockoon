@@ -207,6 +207,9 @@ export class AppComponent implements OnInit {
       );
 
       this.selectEnvironment(0);
+      if(this.currentEnvironment) {
+        this.toggleEnvironment(this.currentEnvironment.environment);
+      }
     });
 
     this.environmentsService.selectEnvironment.subscribe(
