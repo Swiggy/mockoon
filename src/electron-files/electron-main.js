@@ -216,6 +216,11 @@ function createWindow() {
           mainWindow.webContents.send('keydown', { action: 'IMPORT_FILE' });
         }
       },
+      {
+        label: 'Import from Charles', click: function() {
+          mainWindow.webContents.send('keydown', { action: 'IMPORT_CHARLES' });
+        }
+      },
       { type: 'separator' },
       {
         label: 'Export all environments', click: function () {

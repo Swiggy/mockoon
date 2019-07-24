@@ -5,7 +5,7 @@ import * as storage from 'electron-json-storage';
 import * as fs from 'fs';
 import { cloneDeep } from 'lodash';
 import { Subject } from 'rxjs/internal/Subject';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, flatMap } from 'rxjs/operators';
 import { AnalyticsEvents } from 'src/app/enums/analytics-events.enum';
 import { Errors } from 'src/app/enums/errors.enum';
 import { Messages } from 'src/app/enums/messages.enum';
@@ -18,6 +18,7 @@ import { DataSubjectType, ExportType } from 'src/app/types/data.type';
 import { CurrentEnvironmentType, EnvironmentsType, EnvironmentType } from 'src/app/types/environment.type';
 import { CORSHeaders, HeaderType, RouteType } from 'src/app/types/route.type';
 import * as uuid from 'uuid/v1';
+import { Route } from '@angular/compiler/src/core';
 
 @Injectable()
 export class EnvironmentsService {
@@ -596,6 +597,100 @@ export class EnvironmentsService {
             this.eventsService.analyticsEvents.next(AnalyticsEvents.IMPORT_FILE);
 
             callback();
+          }
+        });
+      }
+    });
+  }
+
+public guid() {
+  function s4() {
+      return Math.floor((1 + Math.random()) * 0x10000)
+          .toString(16)
+          .substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+      s4() + '-' + s4() + s4() + s4();
+}
+
+  public importCharlesFile(currentEnvironment: CurrentEnvironmentType) {
+    this.dialog.showOpenDialog(this.BrowserWindow.getFocusedWindow(), { filters: [{ name: 'Charles File', extensions: ['chlsj'] }] }, (file) => {
+      if (file && file[0]) {
+        fs.readFile(file[0], 'utf-8', (error, fileContent) => {
+          if (error) {
+            this.alertService.showAlert('error', Errors.IMPORT_ERROR);
+          } else {
+
+            
+
+            const importData: ExportType = JSON.parse(fileContent);
+
+            const charlesJson = JSON.parse(fileContent);
+
+            var routes = [];
+
+            for (let i = 0; i < charlesJson.length; i++) {
+                const response = charlesJson[i]
+                // console.log(response);
+                if (response.status == "COMPLETE") {
+                    var route = {};
+                    route["method"] = response.method.toLowerCase();
+                    route["uuid"] = this.guid();
+                    route["documentation"] = ""
+                    let path = response.path
+                    if (path.startsWith("/")) {
+                        path = path.substr(1)
+                    }
+                    if (response.query != null || response.query != undefined) {
+                        route["endpoint"] = path + "?" + response.query
+                    } else {
+                        route["endpoint"] = path
+                    }
+                    route["body"] = JSON.parse(JSON.stringify(response.response.body.text))
+                    route["latency"] = 0
+                    route["statusCode"] = response.response.status.toString()
+                    route["headers"] = []
+                    // console.log(header.name)
+                    response.request.header.headers.forEach(header => {
+                        var headerConverted = {};
+                        headerConverted["uuid"] = this.guid()
+                        headerConverted["key"] = header["name"]
+                        headerConverted["value"] = header["value"]
+                        route["headers"].push(headerConverted as HeaderType);
+                    });
+                    route["file"] = null;
+                    route["duplicates"] = [];
+                    routes.push(route as RouteType);
+                }
+            }
+            // console.log(JSON.stringify(routes));
+
+            var myenv = {};
+
+            myenv["uuid"] = this.guid;
+            myenv["running"] = false;
+            myenv["instance"] = null;
+            myenv["name"] = "New Env From Charles";
+            myenv["port"] = 3333;
+            myenv["endpointPrefix"] = "";
+            myenv["latency"] = 0;
+            myenv["routes"] = routes as RouteType[];
+            myenv["startedAt"] = null;
+            myenv["modifiedAt"] = null;
+            myenv["needRestart"] = true;
+            myenv["proxyMode"] = false;
+            myenv["proxyHost"] = "";
+            myenv["https"] = false;
+            myenv["cors"] = true;
+            myenv["headers"] = [];
+            myenv["duplicates"] = [];
+
+            myenv = this.renewUUIDs(myenv as EnvironmentType, 'environment');
+            this.environments.push(myenv as EnvironmentType);
+            this.environments = this.migrateData(this.environments);
+
+            this.alertService.showAlert('success', Messages.IMPORT_ROUTES_FROM_CHARLES_SUCCESS);
+            
           }
         });
       }

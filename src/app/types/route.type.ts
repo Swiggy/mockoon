@@ -325,7 +325,7 @@ export class RouteCounter {
   lastIndexServed: number;
 }
 
-export type HeaderType = { uuid: '', key: string, value: string };
+export type HeaderType = { uuid: string, key: string, value: string };
 
 export const CORSHeaders = [
   { key: 'Access-Control-Allow-Origin', value: '*' },

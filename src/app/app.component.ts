@@ -178,6 +178,9 @@ export class AppComponent implements OnInit {
             }
           });
           break;
+        case "IMPORT_CHARLES":
+          this.environmentsService.importCharlesFile((this.currentEnvironment));
+          break;
         case "IMPORT_CLIPBOARD":
           this.environmentsService.importFromClipboard(this.currentEnvironment);
           break;
@@ -514,7 +517,7 @@ export class AppComponent implements OnInit {
         environment: this.currentEnvironment.environment
       });
     }
-    console.log("environment " + JSON.stringify(this.currentEnvironment.environment));
+    // console.log("environment " + JSON.stringify(this.currentEnvironment.environment));
   }
 
   /**
