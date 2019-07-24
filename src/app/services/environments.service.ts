@@ -646,7 +646,11 @@ public guid() {
                     } else {
                         route["endpoint"] = path
                     }
-                    route["body"] = JSON.parse(JSON.stringify(response.response.body.text))
+                    if (response.response.body.text != undefined) {
+                      route["body"] = JSON.parse(JSON.stringify(response.response.body.text))
+                    } else {
+                        continue;
+                    }
                     route["latency"] = 0
                     route["statusCode"] = response.response.status.toString()
                     route["headers"] = []
@@ -707,15 +711,17 @@ public guid() {
     const routeContentType = route.headers.find(header => header.key === 'Content-Type');
 
     if (routeContentType && routeContentType.value) {
+      // console.log("Returning ", routeContentType.value);
       return routeContentType.value;
     }
 
     const environmentContentType = environment.headers.find(header => header.key === 'Content-Type');
 
     if (environmentContentType && environmentContentType.value) {
+      // console.log("REACHED getRouteContentType");
       return environmentContentType.value;
     }
-
+    // console.log("returning empty from getRouteContentType");
     return '';
   }
 
