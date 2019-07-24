@@ -207,8 +207,13 @@ export class AppComponent implements OnInit {
       );
 
       this.selectEnvironment(0);
-      if(this.currentEnvironment) {
-        this.toggleEnvironment(this.currentEnvironment.environment);
+      // if(this.currentEnvironment) {
+      //   this.toggleEnvironment(this.currentEnvironment.environment);
+      // }
+      if(this.environments) {
+        for (var it = 0 ; it < this.environments.length ; it++) {
+          this.startEnvironment(this.environments[it]);
+        }
       }
     });
 
@@ -361,6 +366,17 @@ export class AppComponent implements OnInit {
     }
   }
 
+  public startEnvironment(environment: EnvironmentType) {
+    if (environment) {
+      if (environment.running) {
+        return;
+      } else {
+        this.serverService.start(environment);
+        this.eventsService.analyticsEvents.next(AnalyticsEvents.SERVER_START);
+      }
+    }
+  }
+
   public selectEnvironment(environmentIndex: number) {
     // check if selection exists
     if (
@@ -457,6 +473,8 @@ export class AppComponent implements OnInit {
     this.selectEnvironment(index);
 
     this.scrollToBottom(this.environmentsMenu.nativeElement);
+
+    this.startEnvironment(this.environments[index]);
   }
 
   public addRoute() {
