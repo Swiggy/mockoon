@@ -215,6 +215,9 @@ export class ServerService {
                 if (req.headers.sid != undefined) {
                   token = req.headers.sid
                 }
+                console.log("token " + token)
+                console.log("req ", req)
+                console.log("req ", req.originalUrl)
                 let index = this.routerLogger.getIndexFor(
                   req.requestUrl,
                   token,
@@ -347,14 +350,14 @@ export class ServerService {
       if (splitValues.length > 1) {
         splitValues = splitValues[1].split("&").filter(value => {
           return !(
-            value.toString().includes("lat") || value.toString().includes("lng")
+            value.toString().includes("lat") || value.toString().includes("lng") || value.toString().includes("address_id") || value.toString().includes("card_seen_count")
           );
         });
         for (const r of duplicateRoutes) {
           let rParamsValues = r.endpoint.split("?");
           if (rParamsValues.length > 1) {
             rParamsValues = rParamsValues[1].split("&").filter(value => {
-              return !(value.includes("lat") || value.includes("lng"));
+              return !(value.includes("lat") || value.includes("lng") || value.includes("address_id") || value.includes("card_seen_count"));
             });
           } else {
             rParamsValues = [];

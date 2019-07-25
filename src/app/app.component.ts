@@ -740,7 +740,6 @@ export class AppComponent implements OnInit {
           return i != index;
         }
       );
-      console.log("current route data" + JSON.stringify(this.currentRoute.route))
     }
   }
 
