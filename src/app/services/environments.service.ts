@@ -585,6 +585,10 @@ export class EnvironmentsService {
 
             importData.data = this.renewUUIDs(importData.data as EnvironmentsType, 'full');
 
+            if (this.environments == undefined) {
+              this.environments = []
+            }
+
             this.environments.push(...(importData.data as EnvironmentsType));
 
             // play migrations
