@@ -558,10 +558,6 @@ export class AppComponent implements OnInit {
       return val != delRoute;
     });
 
-    this.environmentUpdateEvents.next({
-      environment
-    });
-
     // this.environmentsService.removeRoute(
     //   this.currentEnvironment.environment,
     //   routeIndex
@@ -722,6 +718,7 @@ export class AppComponent implements OnInit {
     this.currentRoute.route.alternateRoutes.push(
       `{ "index": ${this.currentRoute.route.alternateRoutes.length} }`
     );
+    this.currentRoute.route.selectedAlternateRoute = 0;
   }
 
   public removeAlternateRouteBody(index) {
