@@ -48,6 +48,7 @@ import {
   MyFilterPipe
 } from "src/app/types/route.type";
 import "../assets/custom_theme.js";
+import { filter } from "rxjs/operators";
 const platform = require("os").platform();
 const appVersion = require("../../package.json").version;
 const arrayMove = require("array-move");
@@ -143,6 +144,7 @@ export class AppComponent implements OnInit {
         case "DELETE_ROUTE":
           if (this.currentRoute) {
             this.removeRoute(this.currentRoute.index);
+            // this.myremoveRoute(this.currentRoute.route);
           }
           break;
         case "PREVIOUS_ENVIRONMENT":
@@ -549,15 +551,26 @@ export class AppComponent implements OnInit {
   private removeRoute(routeIndex: number) {
     this.environmentUpdated("removeRoute", false);
 
-    this.environmentsService.removeRoute(
-      this.currentEnvironment.environment,
-      routeIndex
-    );
+
+    const delRoute = this.filteredRoutes(this.currentEnvironment.environment.routes)[routeIndex];
+
+    this.currentEnvironment.environment.routes = this.currentEnvironment.environment.routes.filter(function(val, i, arr) {
+      return val != delRoute;
+    });
+
+    this.environmentUpdateEvents.next({
+      environment
+    });
+
+    // this.environmentsService.removeRoute(
+    //   this.currentEnvironment.environment,
+    //   routeIndex
+    // );
 
     // if same route than deleted one
     if (routeIndex === this.currentRoute.index) {
       // if there is still something to navigate to, navigate
-      if (this.currentEnvironment.environment.routes.length > 0) {
+      if (this.filteredRoutes(this.currentEnvironment.environment.routes).length > 0) {
         // select previous route or index 0 if currently on 0
         this.selectRoute(routeIndex === 0 ? 0 : routeIndex - 1);
       } else {
@@ -873,6 +886,7 @@ export class AppComponent implements OnInit {
         break;
       case "delete":
         if (payload.subject === "route") {
+          console.log(payload);
           this.removeRoute(payload.subjectId);
         } else if (payload.subject === "environment") {
           this.removeEnvironment(payload.subjectId);
