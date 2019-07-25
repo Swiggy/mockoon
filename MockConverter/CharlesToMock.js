@@ -41,8 +41,6 @@ for (let i = 0; i < charlesJson.length; i++) {
         finalMockJson.routes.push(route)
     }
 }
-console.log(JSON.stringify(finalMockJson.routes))
-
 
 
 /*

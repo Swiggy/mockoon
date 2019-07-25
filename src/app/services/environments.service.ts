@@ -715,18 +715,15 @@ public guid() {
     const routeContentType = route.headers.find(header => header.key === 'Content-Type');
 
     if (routeContentType && routeContentType.value) {
-      // console.log("Returning ", routeContentType.value);
       return routeContentType.value;
     }
 
     const environmentContentType = environment.headers.find(header => header.key === 'Content-Type');
 
     if (environmentContentType && environmentContentType.value) {
-      // console.log("REACHED getRouteContentType");
       return environmentContentType.value;
     }
-    // console.log("returning empty from getRouteContentType");
-    return '';
+    return 'application/json';
   }
 
 
