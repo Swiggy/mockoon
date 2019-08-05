@@ -718,7 +718,6 @@ export class AppComponent implements OnInit {
     this.currentRoute.route.alternateRoutes.push(
       `{ "index": ${this.currentRoute.route.alternateRoutes.length} }`
     );
-    this.currentRoute.route.selectedAlternateRoute = 0;
   }
 
   public removeAlternateRouteBody(index) {
