@@ -6,12 +6,15 @@
 
 ## What is it? 
 
-Mockoon is a free and open source local server/API mocking tool built with Electron and can be used on Windows, Linux and MacOS. You can download it here: [mockoon.com](https://mockoon.com)
+Mockoon is a free and open source local server/API mocking tool built with Electron and can be used on Windows, Linux and MacOS.
 
 ![screenshot](https://mockoon.com/assets/images/screenshot_repo.jpg)
 
-Feel free to test it and give some feedback!
-
+## Difference from mockoon/mockoon?
+1. Support for an alternate mock response for the route. Mock response comes in the circular fashion (1->2->3->1..).
+2. Search for route in the environment.
+3. Upload environment using Charles session JSON file.
+ 
 ## Download
 
 You can get Mockoon [latest release](https://github.com/mockoon/mockoon/releases/latest) directly from this repository or on the official [website](https://mockoon.com/#download). Mockoon is also available through Homebrew `brew cask install mockoon` or Chocolatey `choco install mockoon`.
